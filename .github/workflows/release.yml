@@ -1,0 +1,16 @@
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: Release
+on:
+  push:
+    tags: [v*]
+jobs:
+  docker:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          tag=ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_REF#refs/tags/v}
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
+          docker build . -f deploy/Dockerfile -t "${tag}"
+          docker push "${tag}"
