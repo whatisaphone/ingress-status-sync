@@ -1,8 +1,10 @@
 #![warn(future_incompatible, rust_2018_compatibility, rust_2018_idioms, unused)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::default_trait_access)]
 // #![warn(clippy::cargo)]
 #![cfg_attr(feature = "strict", deny(warnings))]
 
+use gumdrop::Options;
 use k8s_openapi::api::{
     core::v1::{Endpoints, Node},
     networking::v1::Ingress,
@@ -18,17 +20,24 @@ use tracing::{debug, info};
 
 const MANAGER: &str = "ingress-status-sync.wiaph.one";
 const ANNOTATION: &str = "ingress-status-sync.wiaph.one/enabled";
-const TARGET_NAMESPACE: &str = "ingress-nginx";
-const TARGET_SERVICE: &str = "ingress-nginx-controller";
+
+#[derive(Options)]
+struct Args {
+    #[options(required)]
+    target_service_namespace: String,
+    #[options(required)]
+    target_service_name: String,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     tracing_subscriber::fmt().with_env_filter("info").init();
 
+    let args: Args = Args::parse_args_default_or_exit();
+
     let client = Client::try_default().await?;
 
-    let target_ips = get_target_ips(&client).await?;
-    info!(?target_ips);
+    let target_ips = get_target_ips(&client, &args).await?;
 
     for ing in Api::all(client.clone()).list(&<_>::default()).await? {
         process_ingress(&client, &ing, target_ips.iter().map(String::as_str)).await?;
@@ -36,9 +45,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-async fn get_target_ips(client: &Client) -> Result<Vec<String>, Box<dyn Error>> {
-    let eps = <Api<Endpoints>>::namespaced(client.clone(), TARGET_NAMESPACE)
-        .get(TARGET_SERVICE)
+async fn get_target_ips(client: &Client, args: &Args) -> Result<Vec<String>, Box<dyn Error>> {
+    let eps = <Api<Endpoints>>::namespaced(client.clone(), &args.target_service_namespace)
+        .get(&args.target_service_name)
         .await?;
     let node_names = eps
         .subsets
@@ -61,6 +70,12 @@ async fn get_target_ips(client: &Client) -> Result<Vec<String>, Box<dyn Error>> 
             result.push(address.address);
         }
     }
+    info!(
+        namespace = %args.target_service_namespace,
+        name = %args.target_service_name,
+        ips = ?result,
+        "found target service IPs",
+    );
     Ok(result)
 }
 
