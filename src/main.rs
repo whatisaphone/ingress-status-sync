@@ -15,7 +15,8 @@ use kube::{
     Client,
 };
 use serde_json::json;
-use std::error::Error;
+use std::{error::Error, time::Duration};
+use tokio::time::sleep;
 use tracing::{debug, info};
 
 const MANAGER: &str = "ingress-status-sync.wiaph.one";
@@ -23,6 +24,7 @@ const ANNOTATION: &str = "ingress-status-sync.wiaph.one/enabled";
 
 #[derive(Options)]
 struct Args {
+    forever: bool,
     #[options(required)]
     target_service_namespace: String,
     #[options(required)]
@@ -35,6 +37,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let args: Args = Args::parse_args_default_or_exit();
 
+    if args.forever {
+        loop {
+            go(&args).await?;
+            sleep(Duration::from_secs(60)).await;
+        }
+    } else {
+        go(&args).await?;
+    }
+    Ok(())
+}
+
+async fn go(args: &Args) -> Result<(), Box<dyn Error>> {
     let client = Client::try_default().await?;
 
     let target_ips = get_target_ips(&client, &args).await?;
