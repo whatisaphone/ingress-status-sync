@@ -1,8 +1,15 @@
-# nirvana-rust
+# ingress-status-sync
 
-An opinionated [Rust] project starter. There are many like it, but this one is mine.
+A Kubernetes controller. It watches for ingresses with the annotation `ingress-status-sync.wiaph.one/enabled: 'true'`. For each one, it populates `.status.loadBalancer.ingress` with the IPs of the nodes running a target service.
 
-[Rust]: https://www.rust-lang.org/
+Usage:
+
+```sh
+ingress-status-sync \
+    --forever \
+    --target-service-namespace=ingress-nginx \
+    --target-service-name=ingress-nginx-controller
+```
 
 ## Development
 
@@ -11,6 +18,7 @@ An opinionated [Rust] project starter. There are many like it, but this one is m
 - [Rust]
 - [pre-commit]
 
+[Rust]: https://www.rust-lang.org/
 [pre-commit]: https://pre-commit.com/
 
 ### Install the pre-commit hook
