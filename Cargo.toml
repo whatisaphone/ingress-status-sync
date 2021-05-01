@@ -5,6 +5,11 @@ name = "ingress-status-sync"
 version = "0.0.1"
 authors = ["John Simon <john@whatisaph.one>"]
 edition = "2018"
+repository = "https://github.com/whatisaphone/ingress-status-sync"
+categories = ["command-line-utilities"]
+keywords = ["kubernetes", "k8s", "ingress"]
+license = "MIT"
+description = "A controller for Kubernetes that syncs ingress status with a service"
 
 [features]
 strict = []

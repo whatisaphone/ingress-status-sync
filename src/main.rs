@@ -1,7 +1,6 @@
 #![warn(future_incompatible, rust_2018_compatibility, rust_2018_idioms, unused)]
-#![warn(clippy::pedantic)]
+#![warn(clippy::pedantic, clippy::cargo)]
 #![allow(clippy::default_trait_access)]
-// #![warn(clippy::cargo)]
 #![cfg_attr(feature = "strict", deny(warnings))]
 
 use gumdrop::Options;
